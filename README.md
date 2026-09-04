@@ -15,8 +15,8 @@ navegador de cada persona; no hay backend ni cuentas en la nube.
 
 ```
 src/
-  lib/        types.ts (entidades), kpis.ts (cálculo + análisis)
-  data/       local.ts (base Dexie + seed del ejemplo) · db.ts (API de datos)
+  lib/        types.ts (entidades), kpis.ts (cálculo + análisis), ot.ts (ciclo de vida OT)
+  data/       local.ts (base Dexie + seed del ejemplo) · db.ts (API de datos) · mock.ts (técnicos)
   auth/       AuthProvider (sesión local) + RequireAuth (guard)
   components/ AppShell, icons, Dropdown, DatePicker, ui (controles propios)
   pages/      Login, Portal + pages/modules/ (los 6 módulos)
@@ -25,7 +25,27 @@ reference/
 ```
 
 Los 6 módulos: AME (equipos) · Despiece · Plan de Mantenimiento ·
-Liga Equipo-Plan · Órdenes de Trabajo · KPIs.
+Liga Equipo-Plan · Órdenes de Trabajo · KPIs + Bitácora.
+
+## Flujo (cómo se conectan los módulos)
+
+El portal simula el ciclo real de un CMMS, con fines de práctica:
+
+1. **AME** registra el equipo (ficha técnica).
+2. **Despiece** lo desglosa en sistemas y componentes.
+3. **Plan** define rutinas preventivas con su frecuencia.
+4. **Liga** conecta equipo↔plan, genera el calendario y, con un clic,
+   **emite las OT preventivas** del calendario ya asignadas a un técnico.
+5. **Órdenes de Trabajo** gestiona el ciclo de vida real de cada OT
+   (**Programada → En ejecución → Cerrada**, o Correctiva desde una falla),
+   con técnico asignado, tiempos (paro y reparación) y repuestos consumidos.
+6. **KPIs** puede **cargar los datos del historial de OT** para calcular los
+   índices (TMEF, TMPR, disponibilidad, confiabilidad…) y muestra la
+   **bitácora** cronológica del equipo.
+
+La barra de **avance** del sidebar no es manual: refleja, por equipo, qué
+etapas tienen datos reales. Los técnicos son datos *mock* (no hay que
+configurar catálogos): el foco es educativo.
 
 ## Correr en local
 

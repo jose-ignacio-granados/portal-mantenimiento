@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, CalendarDays, Check, CheckCircle2, ClipboardList, Plus, Trash2 } from '../../components/icons'
+import { ArrowRight, CalendarDays, CheckCircle2, ClipboardList, Plus, Trash2 } from '../../components/icons'
 import { CardHead, Checkbox, Dropdown } from '../../components/ui'
 import { agregarRutina, borrarRutina, listarRutinas, obtenerOCrearPlan } from '../../data/db'
 import type { Equipo, Plan, Rutina } from '../../lib/types'
@@ -7,7 +7,7 @@ import type { Equipo, Plan, Rutina } from '../../lib/types'
 interface Props {
   equipo: Equipo | null
   onNewEquipo: () => void
-  onDone: () => void
+  onChanged: () => void
   goNext: () => void
 }
 
@@ -18,7 +18,7 @@ const TIPO_TAG: Record<string, { cls: string; lbl: string }> = {
   ambas: { cls: 't-warn', lbl: 'Ambas' },
 }
 
-export function PlanMant({ equipo, onNewEquipo, onDone, goNext }: Props) {
+export function PlanMant({ equipo, onNewEquipo, onChanged, goNext }: Props) {
   const [plan, setPlan] = useState<Plan | null>(null)
   const [rutinas, setRutinas] = useState<Rutina[]>([])
   const [form, setForm] = useState({ frecuencia: '', nombre: '', tipo: 'fecha', actividades: '' })
@@ -48,11 +48,12 @@ export function PlanMant({ equipo, onNewEquipo, onDone, goNext }: Props) {
       await agregarRutina({ plan_id: plan.id, frecuencia: form.frecuencia, nombre: form.nombre, tipo: form.tipo, actividades })
       setRutinas(await listarRutinas(plan.id))
       setForm({ frecuencia: '', nombre: '', tipo: 'fecha', actividades: '' })
+      onChanged()
     } catch (err) { console.error('Agregar rutina:', err) } finally { setBusy(false) }
   }
 
   async function eliminar(id: string) {
-    try { await borrarRutina(id); if (plan) setRutinas(await listarRutinas(plan.id)) }
+    try { await borrarRutina(id); if (plan) setRutinas(await listarRutinas(plan.id)); onChanged() }
     catch (err) { console.error('Borrar rutina:', err) }
   }
 
@@ -133,8 +134,7 @@ export function PlanMant({ equipo, onNewEquipo, onDone, goNext }: Props) {
       )}
 
       <div className="nav-foot">
-        <button className="btn btn-good" onClick={onDone}><Check className="ico-sm" /> Completado</button>
-        <button className="btn btn-dark" onClick={goNext}>Liga Equipo-Plan <ArrowRight className="ico-sm" /></button>
+        <button className="btn btn-dark" onClick={goNext}>Siguiente: Liga Equipo-Plan <ArrowRight className="ico-sm" /></button>
       </div>
     </>
   )

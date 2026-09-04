@@ -154,3 +154,48 @@ export async function guardarKpi(
   await db.kpi_periodos.add(row)
   return row
 }
+
+// ===== FLUJO Y BITÁCORA (derivados del historial real) =====
+
+/** Estado de completitud de los 6 módulos para un equipo, calculado a
+ *  partir de los datos que realmente existen. Alimenta la barra de avance. */
+export async function estadoFlujo(equipoId: string | null): Promise<boolean[]> {
+  const vacio = [false, false, false, false, false, false]
+  if (!equipoId) return vacio
+  const eq = await db.equipos.get(equipoId)
+  if (!eq) return vacio
+  const [compCount, ligaCount, otCount, kpiCount] = await Promise.all([
+    db.componentes.where('equipo_id').equals(equipoId).count(),
+    db.equipo_plan.where('equipo_id').equals(equipoId).count(),
+    db.ordenes_trabajo.where('equipo_id').equals(equipoId).count(),
+    db.kpi_periodos.where('equipo_id').equals(equipoId).count(),
+  ])
+  const planes = await db.planes.where('equipo_id').equals(equipoId).toArray()
+  let rutinaCount = 0
+  for (const p of planes) rutinaCount += await db.rutinas.where('plan_id').equals(p.id).count()
+  return [true, compCount > 0, rutinaCount > 0, ligaCount > 0, otCount > 0, kpiCount > 0]
+}
+
+export interface HistorialResumen {
+  correctivas: number
+  preventivas: number
+  horasParo: number
+  horasReparacion: number
+}
+
+/** Agrega las OT del equipo para sugerir los datos del período de KPIs. */
+export async function resumenHistorial(equipoId: string): Promise<HistorialResumen> {
+  const ots = await db.ordenes_trabajo.where('equipo_id').equals(equipoId).toArray()
+  let correctivas = 0, preventivas = 0, horasParo = 0, horasReparacion = 0
+  for (const ot of ots) {
+    const d = (ot.data ?? {}) as Record<string, string>
+    if (ot.tipo === 'correctivo') {
+      correctivas++
+      horasParo += parseFloat(d.tiempo_paro) || 0
+      horasReparacion += parseFloat(d.tiempo_reparacion) || parseFloat(d.tiempo_paro) || 0
+    } else {
+      preventivas++
+    }
+  }
+  return { correctivas, preventivas, horasParo, horasReparacion }
+}

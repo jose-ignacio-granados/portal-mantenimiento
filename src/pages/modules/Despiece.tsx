@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, ArrowRight, Check, CircleDot, ListTree, Minus, Plus, Trash2 } from '../../components/icons'
+import { AlertTriangle, ArrowRight, CircleDot, ListTree, Minus, Plus, Trash2 } from '../../components/icons'
 import { CardHead, Dropdown } from '../../components/ui'
 import { agregarComponente, borrarComponente, listarComponentes } from '../../data/db'
 import type { Componente, Equipo } from '../../lib/types'
@@ -7,7 +7,7 @@ import type { Componente, Equipo } from '../../lib/types'
 interface Props {
   equipo: Equipo | null
   onNewEquipo: () => void
-  onDone: () => void
+  onChanged: () => void
   goNext: () => void
 }
 
@@ -16,7 +16,7 @@ const CRITICOS = ['Alto', 'Medio', 'Bajo']
 const NIVEL_TAG: Record<string, string> = { Sistema: 't-brand', Componente: 't-mute', Subcomponente: 't-mute' }
 const CRIT_TAG: Record<string, string> = { Alto: 't-crit', Medio: 't-info', Bajo: 't-mute' }
 
-export function Despiece({ equipo, onNewEquipo, onDone, goNext }: Props) {
+export function Despiece({ equipo, onNewEquipo, onChanged, goNext }: Props) {
   const [items, setItems] = useState<Componente[]>([])
   const [form, setForm] = useState({ codigo: '', nombre: '', nivel: 'Sistema', tipo: '', critico: 'Alto' })
   const [busy, setBusy] = useState(false)
@@ -35,11 +35,12 @@ export function Despiece({ equipo, onNewEquipo, onDone, goNext }: Props) {
       await agregarComponente({ equipo_id: equipo.id, ...form })
       setItems(await listarComponentes(equipo.id))
       setForm({ codigo: '', nombre: '', nivel: 'Sistema', tipo: '', critico: 'Alto' })
+      onChanged()
     } catch (err) { console.error('Agregar componente:', err) } finally { setBusy(false) }
   }
 
   async function eliminar(id: string) {
-    try { await borrarComponente(id); if (equipo) setItems(await listarComponentes(equipo.id)) }
+    try { await borrarComponente(id); if (equipo) setItems(await listarComponentes(equipo.id)); onChanged() }
     catch (err) { console.error('Borrar componente:', err) }
   }
 
@@ -110,8 +111,7 @@ export function Despiece({ equipo, onNewEquipo, onDone, goNext }: Props) {
       )}
 
       <div className="nav-foot">
-        <button className="btn btn-good" onClick={onDone}><Check className="ico-sm" /> Completado</button>
-        <button className="btn btn-dark" onClick={goNext}>Plan de Mantenimiento <ArrowRight className="ico-sm" /></button>
+        <button className="btn btn-dark" onClick={goNext}>Siguiente: Plan de Mantenimiento <ArrowRight className="ico-sm" /></button>
       </div>
     </>
   )

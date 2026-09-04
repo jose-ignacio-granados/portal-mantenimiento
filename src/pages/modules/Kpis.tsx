@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Check, ClipboardList, Flag, Gauge, Save, Sparkles, Zap } from '../../components/icons'
+import { AlertTriangle, BookOpen, CheckCircle2, ClipboardList, FileText, Flag, Gauge, Save, Sparkles, Zap } from '../../components/icons'
 import { CardHead } from '../../components/ui'
-import { guardarKpi, listarKpis } from '../../data/db'
+import { guardarKpi, listarKpis, listarOTs, resumenHistorial } from '../../data/db'
+import { estadoMeta } from '../../lib/ot'
 import { calcularKpis, type KpiResultado } from '../../lib/kpis'
-import type { Equipo } from '../../lib/types'
+import type { Equipo, OrdenTrabajo } from '../../lib/types'
 
 interface Props {
   equipo: Equipo | null
-  onDone: () => void
+  onChanged: () => void
 }
 
 type Estado = 'good' | 'warn' | 'crit' | 'info'
@@ -33,19 +34,20 @@ function tilesFrom(r: KpiResultado): Tile[] {
   ]
 }
 
-export function Kpis({ equipo, onDone }: Props) {
+export function Kpis({ equipo, onChanged }: Props) {
   const [ht, setHt] = useState('720')
   const [nf, setNf] = useState('4')
   const [hp, setHp] = useState('14')
   const [hr, setHr] = useState('14')
   const [res, setRes] = useState<KpiResultado | null>(null)
+  const [ots, setOts] = useState<OrdenTrabajo[]>([])
   const [verConclusion, setVerConclusion] = useState(false)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [msgErr, setMsgErr] = useState(false)
 
   useEffect(() => {
-    if (!equipo) return
+    if (!equipo) { setOts([]); return }
     listarKpis(equipo.id)
       .then((lista) => {
         const ultimo = lista[0]
@@ -57,7 +59,22 @@ export function Kpis({ equipo, onDone }: Props) {
         if (ultimo.resultados && Object.keys(ultimo.resultados).length) setRes(ultimo.resultados as unknown as KpiResultado)
       })
       .catch((err) => console.error('KPIs:', err))
+    listarOTs(equipo.id).then(setOts).catch((err) => console.error('Bitácora:', err))
   }, [equipo])
+
+  async function cargarDelHistorial() {
+    if (!equipo) return
+    try {
+      const r = await resumenHistorial(equipo.id)
+      setNf(String(r.correctivas))
+      setHp(String(r.horasParo))
+      setHr(String(r.horasReparacion))
+      setMsgErr(false)
+      setMsg(r.correctivas > 0
+        ? `Datos cargados del historial: ${r.correctivas} falla(s) correctiva(s), ${r.horasParo} h de paro. Ajusta las horas del período y pulsa Calcular.`
+        : 'No hay órdenes correctivas registradas: el equipo no ha tenido fallas. Registra las horas del período y calcula.')
+    } catch (err) { setMsgErr(true); setMsg(err instanceof Error ? err.message : 'Error al leer el historial') }
+  }
 
   function calcular() {
     setRes(calcularKpis({
@@ -82,6 +99,7 @@ export function Kpis({ equipo, onDone }: Props) {
         resultados: res as unknown as Record<string, unknown>,
       })
       setMsgErr(false); setMsg('Período guardado en el historial del equipo.')
+      onChanged()
     } catch (err) { setMsgErr(true); setMsg(err instanceof Error ? err.message : 'Error al guardar') } finally { setBusy(false) }
   }
 
@@ -107,7 +125,11 @@ export function Kpis({ equipo, onDone }: Props) {
           <div className="field"><label>Horas totales de paro</label><input type="number" value={hp} min="0" onChange={(e) => setHp(e.target.value)} /></div>
           <div className="field"><label>Horas de reparación acum.</label><input type="number" value={hr} min="0" onChange={(e) => setHr(e.target.value)} /></div>
         </div>
-        <div className="btn-row"><button className="btn btn-primary" onClick={calcular}><Zap className="ico-sm" /> Calcular KPIs</button></div>
+        {msg && !res && <div className={`msg ${msgErr ? 'msg-err' : 'msg-ok'}`}>{msg}</div>}
+        <div className="btn-row">
+          <button className="btn btn-ghost" onClick={cargarDelHistorial} disabled={!equipo}><BookOpen className="ico-sm" /> Cargar del historial de OT</button>
+          <button className="btn btn-primary" onClick={calcular}><Zap className="ico-sm" /> Calcular KPIs</button>
+        </div>
       </div>
 
       {res && (
@@ -134,8 +156,36 @@ export function Kpis({ equipo, onDone }: Props) {
         </div>
       )}
 
+      <div className="card">
+        <CardHead step={3} icon={BookOpen} title="Bitácora e historial del equipo" sub="Registro cronológico de las órdenes de trabajo (lo más reciente primero)" />
+        {ots.length === 0 ? (
+          <div className="empty" style={{ padding: 18 }}>Aún no hay movimientos. Emite órdenes de trabajo para construir el historial del equipo.</div>
+        ) : (
+          <div className="bitacora">
+            {ots.map((ot) => {
+              const d = (ot.data ?? {}) as Record<string, string>
+              const prev = ot.tipo === 'preventivo'
+              const est = estadoMeta(ot.estado)
+              const fecha = d.fecha_planificada || d.fecha_falla || d.fecha_emision || ''
+              return (
+                <div className="bita-row" key={ot.id}>
+                  <div className={`bita-ico ${prev ? 'prev' : 'corr'}`}>{prev ? <FileText className="ico-sm" /> : <AlertTriangle className="ico-sm" />}</div>
+                  <div className="bita-main">
+                    <div className="bita-top"><span className="mono">{ot.codigo}</span><span className={`tag ${est.tag}`}>{est.label}</span></div>
+                    <div className="bita-sub">{prev ? (d.actividad || 'Mantenimiento preventivo') : (d.falla || 'Falla correctiva')}</div>
+                  </div>
+                  <div className="bita-meta">
+                    {fecha && <span className="mono">{fecha}</span>}
+                    {d.responsable && <span>{d.responsable}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="nav-foot">
-        <button className="btn btn-good" onClick={onDone}><Check className="ico-sm" /> Completado</button>
         <button className="btn btn-primary" onClick={() => setVerConclusion((v) => !v)}><Flag className="ico-sm" /> Ver conclusión</button>
       </div>
 

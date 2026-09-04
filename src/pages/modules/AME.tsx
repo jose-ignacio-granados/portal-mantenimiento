@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Area, CardHead, Checkbox, DateField, Select, Text } from '../../components/ui'
-import { ArrowRight, Boxes, Check, Factory, FileText, Info, MapPin, Plus, Save, Trash2, Zap } from '../../components/icons'
+import { ArrowRight, Boxes, Factory, FileText, Info, MapPin, Plus, Save, Trash2, Zap } from '../../components/icons'
 import { borrarEquipo, guardarEquipo } from '../../data/db'
 import type { Equipo } from '../../lib/types'
 
@@ -10,7 +10,6 @@ interface Props {
   newSignal: number
   onSelect: (id: string) => void
   onChanged: () => Promise<void> | void
-  onDone: () => void
   goNext: () => void
 }
 
@@ -36,7 +35,7 @@ const DOC_LABELS: [keyof Docs, string][] = [
   ['catalogo', 'Catálogo de piezas'],
 ]
 
-export function AME({ equipos, activoId, newSignal, onSelect, onChanged, onDone, goNext }: Props) {
+export function AME({ equipos, activoId, newSignal, onSelect, onChanged, goNext }: Props) {
   const [creating, setCreating] = useState(false)
   const [f, setF] = useState<Form>(EMPTY)
   const [docs, setDocs] = useState<Docs>(EMPTY_DOCS)
@@ -209,11 +208,8 @@ export function AME({ equipos, activoId, newSignal, onSelect, onChanged, onDone,
       {msg && <div className={`msg ${msgErr ? 'msg-err' : 'msg-ok'}`}>{msg}</div>}
 
       <div className="nav-foot">
-        <div className="btn-row" style={{ marginTop: 0 }}>
-          <button className="btn btn-primary" onClick={guardar} disabled={busy}><Save className="ico-sm" /> {busy ? 'Guardando…' : (editId ? 'Guardar cambios' : 'Crear equipo')}</button>
-          <button className="btn btn-good" onClick={onDone}><Check className="ico-sm" /> Completado</button>
-        </div>
-        <button className="btn btn-dark" onClick={goNext}>Despiece <ArrowRight className="ico-sm" /></button>
+        <button className="btn btn-primary" onClick={guardar} disabled={busy}><Save className="ico-sm" /> {busy ? 'Guardando…' : (editId ? 'Guardar cambios' : 'Crear equipo')}</button>
+        <button className="btn btn-dark" onClick={goNext}>Siguiente: Despiece <ArrowRight className="ico-sm" /></button>
       </div>
 
       {editId && (

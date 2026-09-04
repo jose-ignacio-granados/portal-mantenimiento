@@ -57,7 +57,10 @@ export function Dropdown({ value, onChange, options, placeholder = 'Seleccionar'
               aria-selected={o.value === value}
               className={`dd-opt${o.value === value ? ' sel' : ''}${i === active ? ' active' : ''}`}
               onMouseEnter={() => setActive(i)}
-              onClick={() => choose(o.value)}
+              // Commit en mousedown (antes de que el listener de "clic afuera"
+              // o un re-render puedan tragarse el clic). preventDefault evita
+              // que el trigger pierda el foco a mitad de la selección.
+              onMouseDown={(e) => { e.preventDefault(); choose(o.value) }}
             >
               <span>{o.label}</span>
               {o.value === value && <Check className="ico-sm" />}

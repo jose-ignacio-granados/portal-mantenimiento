@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AppShell } from '../components/AppShell'
-import { getProgreso, guardarProgreso, listarEquipos } from '../data/db'
+import { estadoFlujo, listarEquipos } from '../data/db'
 import { seedIfEmpty } from '../data/local'
 import type { Equipo } from '../lib/types'
 import { AME } from './modules/AME'
@@ -16,26 +16,33 @@ export function Portal() {
   const [equipos, setEquipos] = useState<Equipo[]>([])
   const [activoId, setActivoId] = useState<string | null>(null)
   const [newSignal, setNewSignal] = useState(0)
+  // Se incrementa cuando cualquier módulo cambia datos; dispara recarga de
+  // equipos y recálculo del avance del flujo.
+  const [dataVersion, setDataVersion] = useState(0)
 
-  const refreshEquipos = useCallback(async () => {
-    try {
+  const bump = useCallback(() => setDataVersion((v) => v + 1), [])
+
+  // Carga el ejemplo la primera vez y recarga el catálogo en cada cambio.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      await seedIfEmpty()
       const lista = await listarEquipos()
+      if (cancelled) return
       setEquipos(lista)
       setActivoId((prev) => (prev && lista.some((e) => e.id === prev) ? prev : (lista[0]?.id ?? null)))
-    } catch (err) {
-      console.error('No se pudieron cargar los equipos:', err)
-    }
-  }, [])
+    })().catch((err) => console.error('Inicialización local:', err))
+    return () => { cancelled = true }
+  }, [dataVersion])
 
+  // El avance refleja lo que realmente existe para el equipo activo.
   useEffect(() => {
-    // Carga el ejemplo la primera vez y luego los datos locales.
-    seedIfEmpty()
-      .then(refreshEquipos)
-      .catch((err) => console.error('Inicialización local:', err))
-    getProgreso()
-      .then((p) => { if (p) setDone(p) })
-      .catch((err) => console.error('No se pudo cargar el progreso:', err))
-  }, [refreshEquipos])
+    let cancelled = false
+    estadoFlujo(activoId)
+      .then((d) => { if (!cancelled) setDone(d) })
+      .catch((err) => console.error('No se pudo calcular el avance:', err))
+    return () => { cancelled = true }
+  }, [activoId, dataVersion])
 
   function goTo(n: number) {
     setCur(n)
@@ -47,25 +54,19 @@ export function Portal() {
     goTo(0)
   }
 
-  async function markDone(n: number) {
-    const next = done.map((d, i) => (i === n ? true : d))
-    setDone(next)
-    try { await guardarProgreso(next) } catch (err) { console.error('No se pudo guardar el progreso:', err) }
-  }
-
   const activo = equipos.find((e) => e.id === activoId) ?? null
 
   return (
     <AppShell cur={cur} done={done} onNavigate={goTo} equipos={equipos} activoId={activoId} onSelectEquipo={setActivoId} onNewEquipo={nuevoEquipo}>
       <div className="panel" key={cur}>
         {cur === 0 && (
-          <AME equipos={equipos} activoId={activoId} newSignal={newSignal} onSelect={setActivoId} onChanged={refreshEquipos} onDone={() => markDone(0)} goNext={() => goTo(1)} />
+          <AME equipos={equipos} activoId={activoId} newSignal={newSignal} onSelect={setActivoId} onChanged={bump} goNext={() => goTo(1)} />
         )}
-        {cur === 1 && <Despiece equipo={activo} onNewEquipo={nuevoEquipo} onDone={() => markDone(1)} goNext={() => goTo(2)} />}
-        {cur === 2 && <PlanMant equipo={activo} onNewEquipo={nuevoEquipo} onDone={() => markDone(2)} goNext={() => goTo(3)} />}
-        {cur === 3 && <Liga equipo={activo} onNewEquipo={nuevoEquipo} onDone={() => markDone(3)} goNext={() => goTo(4)} />}
-        {cur === 4 && <OT equipo={activo} onNewEquipo={nuevoEquipo} onDone={() => markDone(4)} goNext={() => goTo(5)} />}
-        {cur === 5 && <Kpis equipo={activo} onDone={() => markDone(5)} />}
+        {cur === 1 && <Despiece equipo={activo} onNewEquipo={nuevoEquipo} onChanged={bump} goNext={() => goTo(2)} />}
+        {cur === 2 && <PlanMant equipo={activo} onNewEquipo={nuevoEquipo} onChanged={bump} goNext={() => goTo(3)} />}
+        {cur === 3 && <Liga equipo={activo} onNewEquipo={nuevoEquipo} onChanged={bump} goNext={() => goTo(4)} />}
+        {cur === 4 && <OT equipo={activo} onNewEquipo={nuevoEquipo} onChanged={bump} goNext={() => goTo(5)} />}
+        {cur === 5 && <Kpis equipo={activo} onChanged={bump} />}
       </div>
     </AppShell>
   )

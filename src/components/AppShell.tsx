@@ -73,7 +73,7 @@ export function AppShell({ cur, done, onNavigate, equipos, activoId, onSelectEqu
 
         <div className="sb-progress">
           <div className="sb-progress-row">
-            <span className="sb-progress-lbl">Progreso</span>
+            <span className="sb-progress-lbl">Avance del equipo</span>
             <span className="sb-progress-val">{completados} / 6</span>
           </div>
           <div className="sb-track"><div className="sb-fill" style={{ width: `${Math.round((completados / 6) * 100)}%` }} /></div>
