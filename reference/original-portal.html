@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Mantenimiento — SmartMant LLC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0A1628; --navy2:#121F35; --navy3:#1A2E4A;
+  --orange:#E8620A; --orange2:#F5924A; --gold:#E8A045;
+  --white:#FFFFFF; --offwhite:#F7F8FA;
+  --gray1:#8A9BB0; --gray2:#D9E3EF; --gray3:#EEF2F7;
+  --green:#2E7D32; --greenl:#E8F5E9;
+  --blue:#1565C0; --bluel:#E3F2FD;
+  --amber:#E65100; --amberl:#FFF3E0;
+  --red:#C62828; --redl:#FFEBEE;
+  --text:#0D1B2E; --text2:#4A5568;
+  --border:#E2E8F0;
+  --rad:12px; --radsm:8px; --radxs:5px;
+  --shadow:0 1px 3px rgba(10,22,40,.08),0 4px 16px rgba(10,22,40,.06);
+  --shadow-lg:0 4px 24px rgba(10,22,40,.12),0 12px 40px rgba(10,22,40,.08);
+}
+html{font-size:16px; -webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',system-ui,sans-serif; background:var(--offwhite); color:var(--text); min-height:100vh; padding-bottom:80px}
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+.header{
+  background:var(--navy);
+  padding:0 20px;
+  position:sticky; top:0; z-index:100;
+  border-bottom:2px solid var(--orange);
+}
+.header-inner{
+  max-width:800px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  height:56px;
+}
+.brand{display:flex; align-items:center; gap:10px}
+.brand-icon{
+  width:34px; height:34px; border-radius:var(--radsm);
+  background:var(--orange);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px;
+}
+.brand-text{line-height:1.2}
+.brand-name{font-size:13px; font-weight:600; color:var(--white); letter-spacing:.01em}
+.brand-sub{font-size:10px; color:rgba(255,255,255,.45); letter-spacing:.02em}
+.header-badge{
+  font-size:10px; font-weight:600; letter-spacing:.06em;
+  color:var(--orange); background:rgba(232,98,10,.15);
+  border:1px solid rgba(232,98,10,.3);
+  padding:3px 10px; border-radius:20px;
+}
+
+/* ═══════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════ */
+.container{max-width:800px; margin:0 auto; padding:20px 16px}
+
+/* ═══════════════════════════════════════════
+   PROGRESS
+═══════════════════════════════════════════ */
+.progress-wrap{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--rad); padding:14px 18px;
+  margin-bottom:16px; box-shadow:var(--shadow);
+}
+.progress-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+.progress-label{font-size:12px; color:var(--text2)}
+.progress-count{font-size:12px; font-weight:600; color:var(--orange)}
+.progress-track{height:5px; background:var(--gray3); border-radius:3px; overflow:hidden}
+.progress-fill{height:100%; background:linear-gradient(90deg,var(--orange),var(--gold)); border-radius:3px; transition:width .4s ease}
+
+/* ═══════════════════════════════════════════
+   MODULE GRID
+═══════════════════════════════════════════ */
+.mod-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px}
+.mod-btn{
+  background:var(--white); border:1.5px solid var(--border);
+  border-radius:var(--rad); padding:14px 10px;
+  cursor:pointer; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  transition:all .18s ease; position:relative;
+}
+.mod-btn:hover{border-color:var(--orange); transform:translateY(-1px); box-shadow:var(--shadow)}
+.mod-btn.active{border-color:var(--orange); background:#FFF5F0; box-shadow:0 0 0 3px rgba(232,98,10,.1)}
+.mod-btn.done{border-color:#4CAF50; background:var(--greenl)}
+.mod-btn .mod-ico{font-size:22px; margin-bottom:2px}
+.mod-btn .mod-num{font-size:9px; font-weight:600; color:var(--gray1); letter-spacing:.08em; font-family:'DM Mono',monospace}
+.mod-btn .mod-lbl{font-size:11px; font-weight:500; color:var(--text); line-height:1.25}
+.mod-btn.active .mod-num{color:var(--orange)}
+.mod-btn.done .mod-num{color:var(--green)}
+.mod-btn.done .mod-lbl{color:var(--green)}
+.mod-check{
+  position:absolute; top:6px; right:8px;
+  font-size:12px; color:var(--green); display:none;
+}
+.mod-btn.done .mod-check{display:block}
+
+/* ═══════════════════════════════════════════
+   PANEL SYSTEM
+═══════════════════════════════════════════ */
+.panel{display:none; animation:fadeUp .22s ease}
+.panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════════
+   SECTION HEAD
+═══════════════════════════════════════════ */
+.sec-head{
+  background:var(--white); border:1px solid var(--border);
+  border-left:3px solid var(--orange);
+  border-radius:var(--rad); padding:14px 18px; margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.sec-head h2{font-size:15px; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:8px}
+.sec-head h2 .ico{font-size:17px}
+.sec-head p{font-size:12.5px; color:var(--text2); line-height:1.55}
+
+/* ═══════════════════════════════════════════
+   STEP CARD
+═══════════════════════════════════════════ */
+.step-card{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--rad); padding:16px 18px; margin-bottom:12px;
+  box-shadow:var(--shadow);
+}
+.step-hd{display:flex; align-items:flex-start; gap:10px; margin-bottom:14px}
+.step-num{
+  min-width:28px; height:28px; border-radius:50%;
+  background:var(--orange); color:var(--white);
+  font-size:12px; font-weight:600;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.step-title{font-size:13.5px; font-weight:600; line-height:1.3}
+.step-sub{font-size:11.5px; color:var(--text2); margin-top:3px}
+
+/* ═══════════════════════════════════════════
+   FORM ELEMENTS
+═══════════════════════════════════════════ */
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.form-grid.c3{grid-template-columns:1fr 1fr 1fr}
+.form-grid.c1{grid-template-columns:1fr}
+.field{display:flex; flex-direction:column; gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:10.5px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.05em}
+.field input,.field select,.field textarea{
+  font-size:13px; padding:8px 11px;
+  border:1.5px solid var(--border); border-radius:var(--radsm);
+  background:var(--offwhite); color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  transition:border-color .15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--orange); background:var(--white)}
+.field textarea{resize:vertical; min-height:70px}
+.sec-div{
+  font-size:10px; font-weight:600; color:var(--gray1);
+  text-transform:uppercase; letter-spacing:.08em;
+  padding:10px 0 6px; margin:12px 0 8px;
+  border-bottom:1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════
+   TABLE
+═══════════════════════════════════════════ */
+.tbl-wrap{overflow-x:auto; margin-bottom:10px}
+.tbl{width:100%; border-collapse:collapse; font-size:12.5px}
+.tbl th{
+  text-align:left; font-size:10.5px; font-weight:600; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.05em;
+  padding:8px 10px; background:var(--gray3);
+  border-bottom:1.5px solid var(--border);
+}
+.tbl td{padding:8px 10px; border-bottom:1px solid var(--border); color:var(--text)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--offwhite)}
+
+/* ═══════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════ */
+.badge{display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; letter-spacing:.02em}
+.b-orange{background:rgba(232,98,10,.12); color:var(--orange)}
+.b-green{background:var(--greenl); color:var(--green)}
+.b-blue{background:var(--bluel); color:var(--blue)}
+.b-gray{background:var(--gray3); color:var(--gray1)}
+.b-amber{background:var(--amberl); color:var(--amber)}
+.b-red{background:var(--redl); color:var(--red)}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn-row{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap}
+.btn{
+  font-size:12.5px; font-weight:500; padding:8px 16px;
+  border-radius:var(--radsm); border:1.5px solid var(--border);
+  cursor:pointer; background:var(--white); color:var(--text);
+  display:inline-flex; align-items:center; gap:6px;
+  transition:all .15s; font-family:'DM Sans',sans-serif;
+}
+.btn:hover{background:var(--gray3); border-color:var(--gray2)}
+.btn-primary{background:var(--orange); color:var(--white); border-color:var(--orange)}
+.btn-primary:hover{background:#c9540a; border-color:#c9540a}
+.btn-success{background:var(--green); color:var(--white); border-color:var(--green)}
+.btn-success:hover{background:#1b5e20}
+.btn-ghost{background:transparent; border-color:transparent; color:var(--text2)}
+.btn-ghost:hover{background:var(--gray3); border-color:var(--border)}
+
+/* ═══════════════════════════════════════════
+   RUTINA ROW
+═══════════════════════════════════════════ */
+.rutina{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:var(--radsm);
+  border:1px solid var(--border); background:var(--white);
+  margin-bottom:6px;
+}
+.rutina-freq{min-width:52px; font-size:11px; font-weight:600; color:var(--orange); font-family:'DM Mono',monospace}
+.rutina-name{font-size:12.5px; flex:1; color:var(--text)}
+
+/* ═══════════════════════════════════════════
+   CHECKLIST
+═══════════════════════════════════════════ */
+.chk{display:flex; align-items:flex-start; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px}
+.chk:last-child{border-bottom:none}
+.chk input{margin-top:2px; accent-color:var(--orange)}
+
+/* ═══════════════════════════════════════════
+   FLOW
+═══════════════════════════════════════════ */
+.flow{display:flex; flex-direction:column; gap:2px}
+.flow-step{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:var(--radsm);
+  border:1px solid var(--border); background:var(--white);
+}
+.flow-ico{font-size:18px; min-width:24px}
+.flow-txt strong{display:block; font-size:13px; font-weight:500; margin-bottom:1px}
+.flow-txt span{font-size:11.5px; color:var(--text2)}
+.flow-arrow{text-align:center; color:var(--gray2); font-size:16px; padding:1px 0}
+
+/* ═══════════════════════════════════════════
+   OT CARD
+═══════════════════════════════════════════ */
+.ot-card{border:1px solid var(--border); border-radius:var(--rad); overflow:hidden; margin-bottom:12px; box-shadow:var(--shadow)}
+.ot-head{display:flex; align-items:center; justify-content:space-between; padding:11px 16px; color:var(--white)}
+.ot-head.prev{background:var(--navy)}
+.ot-head.corr{background:var(--red)}
+.ot-head-l{display:flex; align-items:center; gap:8px}
+.ot-code{font-size:13px; font-weight:600; font-family:'DM Mono',monospace}
+.ot-type{font-size:10px; background:rgba(255,255,255,.18); padding:2px 8px; border-radius:20px; font-weight:500}
+.ot-body{padding:14px 16px}
+
+/* ═══════════════════════════════════════════
+   KPI GRID
+═══════════════════════════════════════════ */
+.kpi-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px}
+.kpi-card{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--radsm); padding:12px; text-align:center;
+  box-shadow:var(--shadow);
+}
+.kpi-val{font-size:22px; font-weight:600; color:var(--orange); font-family:'DM Mono',monospace; line-height:1}
+.kpi-lbl{font-size:11px; font-weight:500; color:var(--text); margin-top:4px}
+.kpi-unit{font-size:10px; color:var(--text2); margin-top:2px}
+
+/* ═══════════════════════════════════════════
+   AI BOX
+═══════════════════════════════════════════ */
+.ai-box{
+  background:var(--bluel); border:1px solid #90CAF9;
+  border-left:3px solid var(--blue);
+  border-radius:var(--rad); padding:14px 16px; margin-top:12px;
+}
+.ai-hd{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+.ai-hd span{font-size:13px; font-weight:600; color:var(--blue)}
+.ai-text{font-size:12.5px; color:var(--text2); line-height:1.6}
+
+/* ═══════════════════════════════════════════
+   CONCLUSION BOX
+═══════════════════════════════════════════ */
+.conclusion{
+  background:var(--navy); border-radius:var(--rad);
+  padding:18px 20px; margin-top:14px;
+}
+.conclusion h3{font-size:14px; font-weight:600; color:var(--white); margin-bottom:8px}
+.conclusion p{font-size:12.5px; color:rgba(255,255,255,.72); line-height:1.65; margin-bottom:14px}
+.conclusion-tags{display:flex; flex-wrap:wrap; gap:6px}
+.ctag{
+  font-size:11px; font-weight:500; color:var(--orange);
+  background:rgba(232,98,10,.18); border:1px solid rgba(232,98,10,.3);
+  padding:4px 12px; border-radius:20px;
+}
+
+/* ═══════════════════════════════════════════
+   CRITICALITY CARDS
+═══════════════════════════════════════════ */
+.crit-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px}
+.crit-card{padding:10px; border-radius:var(--radsm); text-align:center}
+.crit-card .crit-title{font-size:11px; font-weight:700; margin-bottom:4px}
+.crit-card .crit-desc{font-size:11px; line-height:1.4}
+.crit-alto{background:var(--amberl)}
+.crit-alto .crit-title{color:var(--amber)}
+.crit-alto .crit-desc{color:#6D4C41}
+.crit-medio{background:var(--bluel)}
+.crit-medio .crit-title{color:var(--blue)}
+.crit-medio .crit-desc{color:#1A3A5C}
+.crit-bajo{background:var(--gray3)}
+.crit-bajo .crit-title{color:var(--gray1)}
+.crit-bajo .crit-desc{color:var(--text2)}
+
+/* ═══════════════════════════════════════════
+   NAV FOOTER
+═══════════════════════════════════════════ */
+.nav-foot{display:flex; justify-content:space-between; align-items:center; margin-top:16px}
+.nav-step{font-size:11.5px; color:var(--text2)}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+.footer{
+  background:var(--navy); border-top:2px solid var(--orange);
+  padding:14px 20px; text-align:center;
+  position:fixed; bottom:0; left:0; right:0; z-index:50;
+}
+.footer a{color:var(--orange); text-decoration:none; font-weight:500}
+.footer span{font-size:11.5px; color:rgba(255,255,255,.45)}
+
+/* ═══════════════════════════════════════════
+   MOBILE
+═══════════════════════════════════════════ */
+@media(max-width:480px){
+  .mod-grid{grid-template-columns:repeat(2,1fr)}
+  .form-grid,.form-grid.c3{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .crit-grid{grid-template-columns:1fr}
+  .btn-row{flex-direction:column}
+  .btn{justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">⚙️</div>
+      <div class="brand-text">
+        <div class="brand-name">Gestión de Mantenimiento</div>
+        <div class="brand-sub">SmartMant LLC</div>
+      </div>
+    </div>
+    <div class="header-badge">FASE 1</div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap">
+    <div class="progress-row">
+      <span class="progress-label">Progreso del participante</span>
+      <span class="progress-count" id="prog-label">0 / 6 completados</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- MODULE NAV -->
+  <div class="mod-grid">
+    <button class="mod-btn active" id="btn0" onclick="goTo(0)">
+      <span class="mod-ico">🗄️</span>
+      <span class="mod-num">01</span>
+      <span class="mod-lbl">AME — Equipos</span>
+      <span class="mod-check">✓</span>
+    </button>
+    <button class="mod-btn" id="btn1" onclick="goTo(1)">
+      <span class="mod-ico">🌿</span>
+      <span class="mod-num">02</span>
+      <span class="mod-lbl">Despiece</span>
+      <span class="mod-check">✓</span>
+    </button>
+    <button class="mod-btn" id="btn2" onclick="goTo(2)">
+      <span class="mod-ico">📋</span>
+      <span class="mod-num">03</span>
+      <span class="mod-lbl">Plan de Mant.</span>
+      <span class="mod-check">✓</span>
+    </button>
+    <button class="mod-btn" id="btn3" onclick="goTo(3)">
+      <span class="mod-ico">🔗</span>
+      <span class="mod-num">04</span>
+      <span class="mod-lbl">Liga Equipo-Plan</span>
+      <span class="mod-check">✓</span>
+    </button>
+    <button class="mod-btn" id="btn4" onclick="goTo(4)">
+      <span class="mod-ico">📄</span>
+      <span class="mod-num">05</span>
+      <span class="mod-lbl">OT Prev / Corr</span>
+      <span class="mod-check">✓</span>
+    </button>
+    <button class="mod-btn" id="btn5" onclick="goTo(5)">
+      <span class="mod-ico">📊</span>
+      <span class="mod-num">06</span>
+      <span class="mod-lbl">KPIs + IA</span>
+      <span class="mod-check">✓</span>
+    </button>
+  </div>
+
+  <!-- ══ PANEL 0: AME ══════════════════════════════════ -->
+  <div class="panel active" id="panel0">
+    <div class="sec-head">
+      <h2><span class="ico">🗄️</span> Módulo 1 — Archivo Maestro de Equipos (AME)</h2>
+      <p>Registra la ficha técnica completa de cada equipo. Esta es la base de todo el sistema de mantenimiento. Sin un AME bien estructurado, no es posible planificar ni controlar el mantenimiento.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">1</div>
+        <div><div class="step-title">Información general del equipo</div><div class="step-sub">Identifica y clasifica el activo dentro de tu organización</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Sistema</label><input type="text" placeholder="Ej: Sistema de Transporte"></div>
+        <div class="field"><label>Sub-sistema</label><input type="text" placeholder="Ej: Línea de Producción A"></div>
+        <div class="field"><label>Código de posición</label><input type="text" placeholder="Ej: TRN-001"></div>
+        <div class="field"><label>Código del equipo</label><input type="text" placeholder="Ej: SC-61"></div>
+        <div class="field full"><label>Nombre del equipo</label><input type="text" placeholder="Ej: Transportador Sin Fin SC-61"></div>
+        <div class="field"><label>Tipo de activo</label>
+          <select><option>Mecánico</option><option>Eléctrico</option><option>Electrónico</option><option>Neumático</option><option>Hidráulico</option><option>Civil</option></select>
+        </div>
+        <div class="field"><label>Criticidad</label>
+          <select><option>Alta</option><option>Media</option><option>Baja</option></select>
+        </div>
+        <div class="field"><label>Familia de equipos</label>
+          <select><option>Transportadores</option><option>Motores</option><option>Bombas</option><option>Compresores</option><option>Hornos</option><option>Calderas</option><option>Otro</option></select>
+        </div>
+        <div class="field"><label>Clase de mantenimiento</label>
+          <select><option>Preventivo</option><option>Predictivo</option><option>Correctivo</option><option>Mixto</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">2</div>
+        <div><div class="step-title">Ubicación del equipo</div><div class="step-sub">Dónde está físicamente dentro de la planta</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Planta</label><input type="text" placeholder="Ej: Planta Principal"></div>
+        <div class="field"><label>Área</label><input type="text" placeholder="Ej: Área de Producción"></div>
+        <div class="field"><label>Línea de producción</label><input type="text" placeholder="Ej: Línea 1"></div>
+        <div class="field"><label>Departamento</label><input type="text" placeholder="Ej: Mantenimiento"></div>
+        <div class="field full"><label>Ubicación física exacta</label><input type="text" placeholder="Ej: Nave A, columna 12, nivel 2"></div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">3</div>
+        <div><div class="step-title">Fabricante y adquisición</div><div class="step-sub">Trazabilidad del equipo desde su origen</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Marca</label><input type="text" placeholder="Ej: Siemens"></div>
+        <div class="field"><label>Modelo</label><input type="text" placeholder="Ej: SC-Series 61"></div>
+        <div class="field"><label>Serial / N° de serie</label><input type="text" placeholder="Ej: SN-2019-4872"></div>
+        <div class="field"><label>Año de fabricación</label><input type="text" placeholder="Ej: 2019"></div>
+        <div class="field"><label>Año de instalación</label><input type="text" placeholder="Ej: 2020"></div>
+        <div class="field"><label>Fabricante</label><input type="text" placeholder="Ej: Siemens AG"></div>
+        <div class="field"><label>Proveedor / Representante</label><input type="text" placeholder="Ej: Tecnomec C.A."></div>
+        <div class="field"><label>Costo de adquisición</label><input type="text" placeholder="Ej: $12,500"></div>
+        <div class="field"><label>Vida útil estimada (años)</label><input type="text" placeholder="Ej: 15"></div>
+        <div class="field"><label>Garantía hasta</label><input type="date"></div>
+        <div class="field"><label>Centro de costos</label><input type="text" placeholder="Ej: CC-PROD-01"></div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">4</div>
+        <div><div class="step-title">Descripción técnica</div><div class="step-sub">Parámetros eléctricos, dimensiones y servicios requeridos</div></div>
+      </div>
+      <div class="sec-div">Parámetros eléctricos</div>
+      <div class="form-grid c3">
+        <div class="field"><label>Potencia (kW)</label><input type="text" placeholder="Ej: 7.5"></div>
+        <div class="field"><label>Voltaje (V)</label><input type="text" placeholder="Ej: 440"></div>
+        <div class="field"><label>Amperios (A)</label><input type="text" placeholder="Ej: 15.2"></div>
+        <div class="field"><label>Fases</label><input type="text" placeholder="Ej: 3"></div>
+        <div class="field"><label>Frecuencia (Hz)</label><input type="text" placeholder="Ej: 60"></div>
+        <div class="field"><label>Capacidad</label><input type="text" placeholder="Ej: 500 kg/h"></div>
+      </div>
+      <div class="sec-div">Servicios requeridos</div>
+      <div class="form-grid c3">
+        <div class="field"><label>Electricidad</label><input type="text" placeholder="Sí / Amperaje"></div>
+        <div class="field"><label>Aire comprimido</label><input type="text" placeholder="Sí / Bar"></div>
+        <div class="field"><label>Lubricación</label><input type="text" placeholder="Tipo / Frecuencia"></div>
+        <div class="field"><label>Agua</label><input type="text" placeholder="Sí / L/min"></div>
+        <div class="field"><label>Vapor</label><input type="text" placeholder="Sí / PSI"></div>
+        <div class="field"><label>Gas</label><input type="text" placeholder="Sí / No"></div>
+      </div>
+      <div class="sec-div">Documentos disponibles</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;padding:8px 0">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" style="accent-color:var(--orange)"> Manual de operación</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" style="accent-color:var(--orange)"> Manual de mantenimiento</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" style="accent-color:var(--orange)"> Planos mecánicos</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" style="accent-color:var(--orange)"> Diagrama eléctrico</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" style="accent-color:var(--orange)"> Catálogo de piezas</label>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">5</div>
+        <div><div class="step-title">Descripción de funcionamiento</div><div class="step-sub">¿Cómo opera y cuál es su función en el proceso?</div></div>
+      </div>
+      <div class="field">
+        <label>Funcionamiento y función en el proceso</label>
+        <textarea placeholder="Describe cómo opera el equipo, su función dentro del proceso productivo, condiciones normales de operación y cualquier restricción importante..."></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="markDone(0)">✓ Marcar como completado</button>
+      <button class="btn btn-primary" onclick="goTo(1)">Siguiente: Despiece →</button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 1: DESPIECE ══════════════════════════════ -->
+  <div class="panel" id="panel1">
+    <div class="sec-head">
+      <h2><span class="ico">🌿</span> Módulo 2 — Despiece del Equipo</h2>
+      <p>Desglosa el equipo en sus sistemas, componentes y subcomponentes. Esta estructura jerárquica es la base para crear el plan de mantenimiento preventivo.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">1</div>
+        <div><div class="step-title">Árbol de componentes</div><div class="step-sub">Estructura: Equipo → Sistema → Componente → Subcomponente</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Código</th><th>Componente</th><th>Nivel</th><th>Tipo</th><th>Crítico</th></tr></thead>
+          <tbody>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-MOT</code></td><td><strong>Motor eléctrico principal</strong></td><td><span class="badge b-orange">Sistema</span></td><td>Mecánico-eléctrico</td><td><span class="badge b-amber">Alto</span></td></tr>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-MOT-ROD</code></td><td>Rodamientos del motor</td><td><span class="badge b-gray">Comp.</span></td><td>Mecánico</td><td><span class="badge b-amber">Alto</span></td></tr>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-MOT-BOB</code></td><td>Bobinado del motor</td><td><span class="badge b-gray">Comp.</span></td><td>Eléctrico</td><td><span class="badge b-amber">Alto</span></td></tr>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-RED</code></td><td><strong>Reductor de velocidad</strong></td><td><span class="badge b-orange">Sistema</span></td><td>Mecánico</td><td><span class="badge b-amber">Alto</span></td></tr>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-RED-ACE</code></td><td>Aceite del reductor</td><td><span class="badge b-gray">Comp.</span></td><td>Lubricación</td><td><span class="badge b-blue">Medio</span></td></tr>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-SIN</code></td><td><strong>Tornillo sin fin</strong></td><td><span class="badge b-orange">Sistema</span></td><td>Mecánico</td><td><span class="badge b-amber">Alto</span></td></tr>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-SIN-SEL</code></td><td>Sellos y empaquetaduras</td><td><span class="badge b-gray">Comp.</span></td><td>Sellado</td><td><span class="badge b-blue">Medio</span></td></tr>
+            <tr><td><code style="font-family:'DM Mono',monospace;font-size:11px">SC61-ELE</code></td><td><strong>Sistema eléctrico / control</strong></td><td><span class="badge b-orange">Sistema</span></td><td>Eléctrico</td><td><span class="badge b-amber">Alto</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-row"><button class="btn">+ Agregar componente</button></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">2</div>
+        <div><div class="step-title">Criterio de criticidad</div><div class="step-sub">¿Qué pasa si este componente falla?</div></div>
+      </div>
+      <div class="crit-grid">
+        <div class="crit-card crit-alto"><div class="crit-title">⚠️ ALTO</div><div class="crit-desc">Para el proceso o causa riesgo de seguridad inmediato</div></div>
+        <div class="crit-card crit-medio"><div class="crit-title">🔵 MEDIO</div><div class="crit-desc">Afecta eficiencia pero no detiene el proceso</div></div>
+        <div class="crit-card crit-bajo"><div class="crit-title">⬜ BAJO</div><div class="crit-desc">Impacto mínimo, no afecta la operación</div></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="markDone(1)">✓ Marcar como completado</button>
+      <button class="btn btn-primary" onclick="goTo(2)">Siguiente: Plan de Mantenimiento →</button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 2: PLAN ══════════════════════════════════ -->
+  <div class="panel" id="panel2">
+    <div class="sec-head">
+      <h2><span class="ico">📋</span> Módulo 3 — Plan de Mantenimiento Preventivo</h2>
+      <p>Define las rutinas y actividades para cada componente. Un plan puede combinar frecuencias por <strong>fecha</strong> (Diario, Semanal, Mensual…) y por <strong>lectura</strong> (cada N horas, ciclos o km).</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">1</div>
+        <div><div class="step-title">Rutinas del plan preventivo</div><div class="step-sub">Actividades programadas con frecuencia definida</div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <span class="badge b-green">Por fecha</span><span style="font-size:11px;color:var(--text2);align-self:center">Diario · Semanal · Quincenal · Mensual · Trimestral · Semestral · Anual</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="badge b-blue">Por lectura</span><span style="font-size:11px;color:var(--text2);align-self:center">Cada N horas · Cada N ciclos · Cada N km</span>
+      </div>
+      <div class="rutina"><div class="rutina-freq">Diario</div><div class="rutina-name">Inspección visual: temperatura, ruidos, vibración del motor</div><span class="badge b-green">Fecha</span></div>
+      <div class="rutina"><div class="rutina-freq">Semanal</div><div class="rutina-name">Verificación de alineación del tornillo sin fin y estado de sellos</div><span class="badge b-green">Fecha</span></div>
+      <div class="rutina"><div class="rutina-freq">Mensual</div><div class="rutina-name">Lubricación de rodamientos — Grasa SKF LGMT2 (20 gr)</div><span class="badge b-green">Fecha</span></div>
+      <div class="rutina"><div class="rutina-freq">500 h</div><div class="rutina-name">Cambio de aceite del reductor — ISO VG 220</div><span class="badge b-blue">Lectura</span></div>
+      <div class="rutina"><div class="rutina-freq">Trimestral</div><div class="rutina-name">Inspección eléctrica: conexiones, protecciones, variador</div><span class="badge b-green">Fecha</span></div>
+      <div class="rutina"><div class="rutina-freq">Anual</div><div class="rutina-name">Revisión general completa — parada programada</div><span class="badge b-amber">Ambas</span></div>
+      <div class="btn-row"><button class="btn">+ Agregar rutina</button></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">2</div>
+        <div><div class="step-title">Actividades de la rutina mensual</div><div class="step-sub">Checklist paso a paso para ejecutar la lubricación de rodamientos</div></div>
+      </div>
+      <div class="chk"><input type="checkbox"> <span>Detener el equipo y bloquear la energía (procedimiento LOTO)</span></div>
+      <div class="chk"><input type="checkbox"> <span>Verificar temperatura del motor con termómetro infrarrojo (máx. 80°C)</span></div>
+      <div class="chk"><input type="checkbox"> <span>Aplicar 10 gr de grasa SKF LGMT2 en rodamiento delantero</span></div>
+      <div class="chk"><input type="checkbox"> <span>Aplicar 10 gr de grasa SKF LGMT2 en rodamiento trasero</span></div>
+      <div class="chk"><input type="checkbox"> <span>Verificar estado visual de cables y conexiones eléctricas</span></div>
+      <div class="chk"><input type="checkbox"> <span>Registrar lecturas del variador de frecuencia</span></div>
+      <div class="chk"><input type="checkbox"> <span>Retirar bloqueo, energizar y verificar operación normal</span></div>
+      <div class="chk"><input type="checkbox"> <span>Documentar la actividad en la bitácora del equipo</span></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="markDone(2)">✓ Marcar como completado</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Siguiente: Liga Equipo-Plan →</button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 3: LIGA ══════════════════════════════════ -->
+  <div class="panel" id="panel3">
+    <div class="sec-head">
+      <h2><span class="ico">🔗</span> Módulo 4 — Liga Equipo con Plan de Mantenimiento</h2>
+      <p>Conecta cada equipo con su plan. A partir de aquí el sistema genera automáticamente el calendario de actividades y las próximas fechas de intervención.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">1</div>
+        <div><div class="step-title">Flujo del ciclo preventivo (rutinario)</div><div class="step-sub">Así funciona el proceso automático de mantenimiento</div></div>
+      </div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-ico">🗄️</div><div class="flow-txt"><strong>Catálogo de Equipos (AME)</strong><span>Equipo registrado con ficha técnica completa</span></div></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><div class="flow-ico">📋</div><div class="flow-txt"><strong>Plan de Mantenimiento</strong><span>Rutinas, frecuencias y actividades definidas</span></div></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><div class="flow-ico">🔗</div><div class="flow-txt"><strong>Liga Equipo ↔ Plan</strong><span>Se asigna el plan al equipo con fecha de inicio</span></div></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><div class="flow-ico">📅</div><div class="flow-txt"><strong>Generación automática del calendario</strong><span>El sistema calcula todos los próximos mantenimientos</span></div></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><div class="flow-ico">📄</div><div class="flow-txt"><strong>Emisión de OT Preventiva</strong><span>Orden de trabajo generada para ejecutar</span></div></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-step"><div class="flow-ico">📖</div><div class="flow-txt"><strong>Bitácora e historial</strong><span>Registro histórico del equipo actualizado automáticamente</span></div></div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">2</div>
+        <div><div class="step-title">Plan maestro — Próximos mantenimientos SC-61</div><div class="step-sub">Calendario generado automáticamente al ligar el plan</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Actividad</th><th>Frecuencia</th><th>Próxima fecha</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>Inspección visual motor</td><td>Diaria</td><td>Hoy</td><td><span class="badge b-amber">Pendiente</span></td></tr>
+            <tr><td>Verificación alineación</td><td>Semanal</td><td>15/06/2026</td><td><span class="badge b-green">Programado</span></td></tr>
+            <tr><td>Lubricación rodamientos</td><td>Mensual</td><td>30/06/2026</td><td><span class="badge b-green">Programado</span></td></tr>
+            <tr><td>Cambio aceite reductor</td><td>500 horas</td><td>380 h acum.</td><td><span class="badge b-blue">En progreso</span></td></tr>
+            <tr><td>Inspección eléctrica</td><td>Trimestral</td><td>01/08/2026</td><td><span class="badge b-green">Programado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="markDone(3)">✓ Marcar como completado</button>
+      <button class="btn btn-primary" onclick="goTo(4)">Siguiente: Órdenes de Trabajo →</button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 4: OT ════════════════════════════════════ -->
+  <div class="panel" id="panel4">
+    <div class="sec-head">
+      <h2><span class="ico">📄</span> Módulo 5 — Órdenes de Trabajo (OT)</h2>
+      <p>La OT es el documento central de control del mantenimiento. Genera y gestiona órdenes <strong>Preventivas</strong> (desde el plan) y <strong>Correctivas</strong> (desde una falla reportada).</p>
+    </div>
+
+    <div class="ot-card">
+      <div class="ot-head prev">
+        <div class="ot-head-l">
+          <span style="font-size:18px">📋</span>
+          <span class="ot-code">OT-2026-0142</span>
+          <span class="ot-type">Preventivo</span>
+        </div>
+        <span class="badge b-green">Abierta</span>
+      </div>
+      <div class="ot-body">
+        <div class="form-grid">
+          <div class="field"><label>Equipo</label><input type="text" value="SC-61 — Transportador Sin Fin"></div>
+          <div class="field"><label>Fecha de emisión</label><input type="date" value="2026-06-08"></div>
+          <div class="field"><label>Fecha planificada</label><input type="date" value="2026-06-30"></div>
+          <div class="field"><label>Responsable</label><input type="text" placeholder="Técnico asignado"></div>
+          <div class="field full"><label>Actividad a realizar</label><input type="text" value="Lubricación mensual de rodamientos del motor — SKF LGMT2"></div>
+          <div class="field"><label>Prioridad</label><select><option>Normal</option><option>Urgente</option><option>Diferible</option></select></div>
+          <div class="field"><label>Tiempo estimado (h)</label><input type="text" placeholder="Ej: 1.5"></div>
+          <div class="field full"><label>Materiales requeridos</label><textarea>Grasa SKF LGMT2 — 20 gr&#10;Trapos industriales&#10;EPP: guantes, lentes de seguridad</textarea></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary">↗ Emitir OT</button>
+          <button class="btn">🖨 Imprimir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ot-card">
+      <div class="ot-head corr">
+        <div class="ot-head-l">
+          <span style="font-size:18px">⚠️</span>
+          <span class="ot-code">OT-2026-0139</span>
+          <span class="ot-type">Correctivo</span>
+        </div>
+        <span class="badge" style="background:rgba(255,255,255,.18);color:#fff">Cerrada</span>
+      </div>
+      <div class="ot-body">
+        <div class="form-grid">
+          <div class="field"><label>Equipo</label><input type="text" value="SC-61 — Transportador Sin Fin"></div>
+          <div class="field"><label>Falla reportada</label><input type="text" value="Ruido anormal en rodamiento trasero"></div>
+          <div class="field"><label>Fecha de falla</label><input type="date" value="2026-06-03"></div>
+          <div class="field"><label>Tiempo de paro (h)</label><input type="text" value="3.5"></div>
+          <div class="field full"><label>Causa raíz (RCFA)</label><textarea>Falta de lubricación. Intervalo de engrase excedido por 15 días. Rodamiento SKF 6205 con desgaste severo.</textarea></div>
+          <div class="field full"><label>Acción correctiva tomada</label><textarea>Sustitución de rodamiento trasero SKF 6205. Reengrase completo. Se ajusta plan preventivo a ciclo cada 25 días.</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="markDone(4)">✓ Marcar como completado</button>
+      <button class="btn btn-primary" onclick="goTo(5)">Siguiente: KPIs + IA →</button>
+    </div>
+  </div>
+
+  <!-- ══ PANEL 5: KPIs ══════════════════════════════════ -->
+  <div class="panel" id="panel5">
+    <div class="sec-head">
+      <h2><span class="ico">📊</span> Módulo 6 — Análisis de KPIs con Inteligencia Artificial</h2>
+      <p>Calcula los índices clave de mantenimiento y obtén sugerencias de mejora generadas por IA. Estos indicadores miden el desempeño real de tu gestión.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-hd">
+        <div class="step-num">1</div>
+        <div><div class="step-title">Ingresa los datos del período</div><div class="step-sub">Con estos datos el sistema calcula automáticamente todos los KPIs</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Horas totales del período</label><input type="number" id="ht" value="720" min="1"></div>
+        <div class="field"><label>Número de fallas</label><input type="number" id="nf" value="4" min="0"></div>
+        <div class="field"><label>Horas totales de paro</label><input type="number" id="hp" value="14" min="0"></div>
+        <div class="field"><label>Horas de reparación acum.</label><input type="number" id="hr" value="14" min="0"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calcKPIs()">⚡ Calcular KPIs</button>
+      </div>
+    </div>
+
+    <div class="step-card" id="kpi-results" style="display:none">
+      <div class="step-hd">
+        <div class="step-num">2</div>
+        <div><div class="step-title">Resultados — Equipo SC-61</div><div class="step-sub">Período analizado</div></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-val" id="v-tmef">—</div><div class="kpi-lbl">TMEF</div><div class="kpi-unit">Tiempo Medio Entre Fallas</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="v-tmpr">—</div><div class="kpi-lbl">TMPR</div><div class="kpi-unit">Tiempo Medio Para Reparar</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="v-disp">—</div><div class="kpi-lbl">Disponibilidad</div><div class="kpi-unit">% tiempo operativo</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="v-conf">—</div><div class="kpi-lbl">Confiabilidad</div><div class="kpi-unit">% sin falla</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="v-mant">—</div><div class="kpi-lbl">Mantenibilidad</div><div class="kpi-unit">% reparación oportuna</div></div>
+        <div class="kpi-card" style="border-color:var(--orange);background:#FFF5F0">
+          <div class="kpi-val" id="v-indice" style="font-size:18px">—</div>
+          <div class="kpi-lbl" style="color:var(--orange)">Índice Global</div>
+          <div class="kpi-unit">Desempeño general</div>
+        </div>
+      </div>
+      <div class="ai-box">
+        <div class="ai-hd">🤖 <span>Análisis IA — Sugerencias de mejora</span></div>
+        <div class="ai-text" id="ai-text">Calculando análisis...</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="markDone(5)">✓ Marcar como completado</button>
+      <button class="btn btn-primary" onclick="toggleConclusion()">🏁 Ver conclusión del módulo</button>
+    </div>
+
+    <div id="conclusion" style="display:none;margin-top:14px">
+      <div class="conclusion">
+        <h3>💡 Conclusión del módulo</h3>
+        <p>Acabas de recorrer <strong style="color:#fff">todo el proceso de gestión de mantenimiento</strong> — desde el registro del equipo hasta el análisis de KPIs. Y lo hiciste manualmente, uno por uno.<br><br>
+        Imagina gestionar <strong style="color:var(--orange)">50, 100 o 500 equipos</strong> de esta forma. Ahí es exactamente donde un <strong style="color:var(--gold)">CMMS como Svision</strong> automatiza cada uno de estos pasos, genera las OT automáticamente, calcula los KPIs en tiempo real y mantiene toda la información organizada y disponible desde cualquier dispositivo.</p>
+        <div class="conclusion-tags">
+          <span class="ctag">✓ AME completo</span>
+          <span class="ctag">✓ Despiece estructurado</span>
+          <span class="ctag">✓ Plan preventivo</span>
+          <span class="ctag">✓ Liga Equipo-Plan</span>
+          <span class="ctag">✓ OT Preventiva y Correctiva</span>
+          <span class="ctag">✓ KPIs con IA</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV FOOTER -->
+  <div class="nav-foot">
+    <button class="btn btn-ghost" id="btn-back" style="display:none" onclick="navBack()">← Anterior</button>
+    <span class="nav-step" id="step-ind">Módulo 1 de 6 — AME — Equipos</span>
+    <div></div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <span>Elaborado por SmartMant LLC &nbsp;·&nbsp; <a href="https://www.smartmant.com" target="_blank">www.smartmant.com</a> &nbsp;·&nbsp; +1.786.543.8002</span>
+</footer>
+
+<script>
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let cur = 0;
+let done = [false,false,false,false,false,false];
+const labels = ['AME — Equipos','Despiece','Plan de Mantenimiento','Liga Equipo-Plan','OT Prev / Corr','KPIs + IA'];
+
+// ─── Load from localStorage ────────
+function loadState(){
+  try{
+    const s = localStorage.getItem('mant_done');
+    if(s) done = JSON.parse(s);
+    done.forEach((d,i)=>{ if(d){ document.getElementById('btn'+i).classList.add('done'); } });
+    updateProgress();
+  }catch(e){}
+}
+
+function saveState(){
+  try{ localStorage.setItem('mant_done', JSON.stringify(done)); }catch(e){}
+}
+
+// ─── Navigation ────────────────────
+function goTo(n){
+  document.getElementById('panel'+cur).classList.remove('active');
+  document.getElementById('btn'+cur).classList.remove('active');
+  cur = n;
+  document.getElementById('panel'+n).classList.add('active');
+  document.getElementById('btn'+n).classList.add('active');
+  document.getElementById('step-ind').textContent = 'Módulo '+(n+1)+' de 6 — '+labels[n];
+  document.getElementById('btn-back').style.display = n > 0 ? 'flex' : 'none';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function navBack(){ if(cur>0) goTo(cur-1); }
+
+// ─── Mark done ─────────────────────
+function markDone(n){
+  done[n] = true;
+  document.getElementById('btn'+n).classList.add('done');
+  updateProgress();
+  saveState();
+}
+
+function updateProgress(){
+  const c = done.filter(Boolean).length;
+  document.getElementById('prog-label').textContent = c+' / 6 completados';
+  document.getElementById('prog-bar').style.width = Math.round(c/6*100)+'%';
+}
+
+// ─── KPI Calculation ───────────────
+function calcKPIs(){
+  const ht = parseFloat(document.getElementById('ht').value)||720;
+  const nf = parseFloat(document.getElementById('nf').value)||1;
+  const hp = parseFloat(document.getElementById('hp').value)||0;
+  const hr = parseFloat(document.getElementById('hr').value)||0;
+
+  const tmef = nf>0 ? ((ht-hp)/nf).toFixed(1) : '∞';
+  const tmpr = nf>0 ? (hr/nf).toFixed(1) : '0';
+  const disp = (((ht-hp)/ht)*100).toFixed(1)+'%';
+  const conf = Math.max(0,(100 - (nf/(ht/720)*100))).toFixed(1)+'%';
+  const tmefN = parseFloat(tmef)||999;
+  const tmprN = parseFloat(tmpr)||0;
+  const mant = tmefN>0 ? Math.min(100,(tmefN/(tmefN+tmprN)*100)).toFixed(1)+'%' : '—';
+  const indice = ((parseFloat(disp)+parseFloat(conf))/2).toFixed(1)+'%';
+
+  document.getElementById('v-tmef').textContent = tmef+' h';
+  document.getElementById('v-tmpr').textContent = tmpr+' h';
+  document.getElementById('v-disp').textContent = disp;
+  document.getElementById('v-conf').textContent = conf;
+  document.getElementById('v-mant').textContent = mant;
+  document.getElementById('v-indice').textContent = indice;
+
+  // AI suggestions
+  const dispN = parseFloat(disp);
+  const confN = parseFloat(conf);
+  let txt = '';
+  if(dispN < 90) txt += '<strong>⚠️ Disponibilidad crítica ('+disp+'):</strong> Revisar urgentemente el plan preventivo. Posibles causas: frecuencias de mantenimiento inadecuadas o falta de repuestos críticos en almacén. ';
+  else if(dispN < 95) txt += '<strong>📉 Disponibilidad por debajo de clase mundial ('+disp+'):</strong> Meta recomendada ≥95%. Revisar frecuencias del plan preventivo y analizar componentes con mayor tasa de falla. ';
+  if(tmprN > 4) txt += '<strong>⏱️ TMPR elevado ('+tmpr+' h):</strong> El tiempo de reparación es alto. Verificar logística de repuestos, herramientas disponibles y competencias técnicas del equipo. ';
+  if(tmefN < 100 && tmefN !== 999) txt += '<strong>🔁 TMEF bajo ('+tmef+' h):</strong> Las fallas ocurren con frecuencia. Considerar incrementar la lubricación, ajustar el plan preventivo e implementar mantenimiento predictivo (vibración, termografía). ';
+  if(!txt) txt = '<strong>✅ Excelente desempeño.</strong> Los KPIs están dentro de los parámetros de clase mundial. Mantén el plan preventivo, documenta las buenas prácticas y considera implementar mantenimiento predictivo para sostener estos resultados.';
+
+  document.getElementById('ai-text').innerHTML = txt;
+  document.getElementById('kpi-results').style.display = 'block';
+  document.getElementById('kpi-results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function toggleConclusion(){
+  const el = document.getElementById('conclusion');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if(el.style.display==='block') el.scrollIntoView({behavior:'smooth'});
+}
+
+// ─── Init ──────────────────────────
+loadState();
+document.getElementById('step-ind').textContent = 'Módulo 1 de 6 — '+labels[0];
+</script>
+</body>
+</html>
